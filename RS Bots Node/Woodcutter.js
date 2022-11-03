@@ -19,7 +19,7 @@ function main() {
         robot.moveMouse(tree.x, tree.y);
         robot.mouseClick();
         // wait for walking and chopping to complete
-        sleep(8000);
+        sleep(3000);
 
         dropLogs();
     }
@@ -28,12 +28,27 @@ function main() {
 function dropLogs() {
     var inventory_x = 1882;
     var inventory_y = 830;
+    var inventory_log_color = "765b37";
+
+    var pixel_color = robot.getPixelColor(inventory_x, inventory_y);
+    //console.log("Inventory log color is: " + pixel_color);
+
+    var wait_cycles = 0;
+    var max_wait_cycles = 9;
+    while (pixel_color != inventory_log_color && wait_cycles < max_wait_cycles) {
+        sleep(1000);
+        pixel_color = robot.getPixelColor(inventory_x, inventory_y);
+        // increment counter
+        wait_cycles++;
+    }
     // drop logs from the inventory
-    robot.moveMouse(inventory_x, inventory_y);
-    robot.keyToggle('shift', 'down');
-    robot.mouseClick();
-    robot.keyToggle('shift', 'up');
-    sleep(200);
+    if (pixel_color == inventory_log_color) {
+        robot.moveMouse(inventory_x, inventory_y);
+        robot.keyToggle('shift', 'down');
+        robot.mouseClick();
+        robot.keyToggle('shift', 'up');
+        sleep(200);
+    }
 }
 
 function testScreenCapture() {
@@ -74,8 +89,12 @@ function findTree() {
             var screen_x = random_x + x;
             var screen_y = random_y + y;
 
-            console.log("Found a tree at: " + screen_x + ", " + screen_y + " color " + sample_color);
-            return {x: screen_x, y: screen_y};
+            if (confirmTree(screen_x, screen_y)) {
+                console.log("Found a tree at: " + screen_x + ", " + screen_y + " color " + sample_color);
+                return {x: screen_x, y: screen_y};
+            } else {
+                console.log("Unconfirmed tree at: " + screen_x + ", " + screen_y + " color " + sample_color);
+            }
         }
     }
     
@@ -88,6 +107,20 @@ function rotateCamera() {
     robot.keyToggle('right', 'down');
     sleep(1000);
     robot.keyToggle('right', 'up');
+}
+
+function confirmTree(screen_x, screen_y) {
+    //first move the mouse to the given voords
+    robot.moveMouse(screen_x, screen_y);
+    //wait a moment
+    sleep(300)
+
+    //now check the color of the action text
+    var check_x = 80;
+    var check_y = 63;
+    var pixel_color = robot.getPixelColor(check_x, check_y);
+
+    return pixel_color == "00ffff";
 }
 
 function sleep(ms) {
